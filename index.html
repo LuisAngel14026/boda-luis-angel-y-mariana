@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+
+  <!-- Configuración esencial para móviles -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Información para buscadores y vista previa -->
+  <meta
+    name="description"
+    content="Invitación de boda de Luis Ángel y Mariana. 9 de enero de 2027, La Piedad, Michoacán."
+  >
+  <meta name="theme-color" content="#111111">
+
+  <title>Luis Ángel & Mariana | 09.01.2027</title>
+
+  <!-- Preconexiones para acelerar la carga de fuentes y librerías -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Tipografías -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap"
+    rel="stylesheet"
+  >
+
+  <!-- Font Awesome -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+  >
+
+  <!-- AOS -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css"
+  >
+
+  <!-- Swiper -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
+  >
+
+  <!-- Hoja de estilos principal -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <!-- Pantalla de carga -->
+  <div class="preloader" id="preloader" aria-hidden="true">
+    <div class="preloader__monogram">L<span>&</span>M</div>
+    <div class="preloader__line"></div>
+  </div>
+
+  <!-- Decoración global -->
+  <div class="page-noise" aria-hidden="true"></div>
+
+  <!-- Reproductor de música flotante -->
+  <button
+    class="music-button"
+    id="musicButton"
+    type="button"
+    aria-label="Reproducir música"
+    aria-pressed="false"
+  >
+    <span class="music-button__rings" aria-hidden="true"></span>
+    <i class="fa-solid fa-music" aria-hidden="true"></i>
+  </button>
+
+  <audio id="backgroundMusic" loop preload="none">
+    <!-- Reemplaza este archivo por tu canción instrumental -->
+    <source src="assets/audio/cancion-instrumental.mp3" type="audio/mpeg">
+    Tu navegador no puede reproducir audio.
+  </audio>
+
+  <main>
+    <!-- ======================================================
+         1. PORTADA
+    ======================================================= -->
+    <section class="hero" id="inicio">
+      <div class="hero__overlay" aria-hidden="true"></div>
+
+      <div class="hero__floral hero__floral--top" aria-hidden="true"></div>
+      <div class="hero__floral hero__floral--bottom" aria-hidden="true"></div>
+
+      <div class="hero__content" data-aos="fade-up" data-aos-duration="1400">
+        <p class="eyebrow">Nuestra boda</p>
+
+        <h1 class="hero__title">
+          Luis Ángel
+          <span class="hero__ampersand">&</span>
+          Mariana
+        </h1>
+
+        <div class="gold-divider hero__divider" aria-hidden="true">
+        <span></span>
+        <i class="fa-solid fa-heart"></i>
+        <span></span>
+        </div>
+
+        <p class="hero__date">09 · 01 · 2027</p>
+        <p class="hero__location">La Piedad, Michoacán</p>
+
+        <a class="scroll-indicator" href="#mensaje" aria-label="Ver invitación">
+          <span>Descubrir</span>
+          <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+        </a>
+      </div>
+    </section>
+
+    <!-- ======================================================
+         2. MENSAJE
+    ======================================================= -->
+    <section class="section section--marble message-section" id="mensaje">
+      <div class="container container--narrow">
+        <p class="section-kicker" data-aos="fade-up">Con la bendición de Dios</p>
+
+        <h2 class="section-title" data-aos="fade-up" data-aos-delay="100">
+          Hemos decidido caminar juntos para siempre
+        </h2>
+
+        <div class="ornament" data-aos="zoom-in" data-aos-delay="180" aria-hidden="true">
+          <span></span>
+          <i class="fa-solid fa-leaf"></i>
+          <span></span>
+        </div>
+
+        <p class="message-text" data-aos="fade-up" data-aos-delay="250">
+          Hay momentos en la vida que son especiales por sí solos, pero compartirlos
+          con las personas que amamos los convierte en inolvidables.
+        </p>
+
+        <p class="message-text message-text--accent" data-aos="fade-up" data-aos-delay="320">
+          Nos encantará contar con tu presencia en el inicio de nuestra nueva historia.
+        </p>
+      </div>
+    </section>
+
+    <!-- ======================================================
+         3. CUENTA REGRESIVA
+    ======================================================= -->
+    <section class="section section--dark countdown-section">
+      <div class="container">
+        <p class="section-kicker section-kicker--light" data-aos="fade-up">
+          Falta muy poco
+        </p>
+
+        <h2 class="section-title section-title--light" data-aos="fade-up">
+          Para nuestro gran día
+        </h2>
+
+        <div class="countdown" id="countdown" data-aos="fade-up" data-aos-delay="150">
+          <div class="countdown__item">
+            <span class="countdown__number" id="days">000</span>
+            <span class="countdown__label">Días</span>
+          </div>
+
+          <div class="countdown__separator" aria-hidden="true">:</div>
+
+          <div class="countdown__item">
+            <span class="countdown__number" id="hours">00</span>
+            <span class="countdown__label">Horas</span>
+          </div>
+
+          <div class="countdown__separator" aria-hidden="true">:</div>
+
+          <div class="countdown__item">
+            <span class="countdown__number" id="minutes">00</span>
+            <span class="countdown__label">Minutos</span>
+          </div>
+
+          <div class="countdown__separator" aria-hidden="true">:</div>
+
+          <div class="countdown__item">
+            <span class="countdown__number" id="seconds">00</span>
+            <span class="countdown__label">Segundos</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================
+         4. FECHA
+    ======================================================= -->
+    <section class="section section--marble date-section">
+      <div class="container">
+        <div class="date-card" data-aos="zoom-in">
+          <p class="date-card__month">Enero</p>
+
+          <div class="date-card__main">
+            <span class="date-card__day-name">Sábado</span>
+            <span class="date-card__number">09</span>
+            <span class="date-card__year">2027</span>
+          </div>
+
+          <p class="date-card__phrase">El día que comienza nuestro para siempre</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================
+         5. CEREMONIA Y RECEPCIÓN
+    ======================================================= -->
+    <section class="section events-section" id="ubicaciones">
+      <div class="container">
+        <p class="section-kicker" data-aos="fade-up">Acompáñanos</p>
+        <h2 class="section-title" data-aos="fade-up">Ceremonia y recepción</h2>
+
+        <div class="events-grid">
+          <article class="event-card" data-aos="fade-up" data-aos-delay="100">
+            <div class="event-card__icon">
+              <i class="fa-solid fa-church" aria-hidden="true"></i>
+            </div>
+
+            <p class="event-card__type">Ceremonia religiosa</p>
+            <h3 class="event-card__title">Templo del Señor de La Piedad</h3>
+            <p class="event-card__time">5:00 PM</p>
+
+            <p class="event-card__address">
+              Centro Histórico<br>
+              La Piedad, Michoacán
+            </p>
+
+            <!-- Reemplaza # por el enlace de Google Maps -->
+            <a
+              class="button button--outline"
+              href="https://www.google.com/maps/place/Santuario+del+Se%C3%B1or+de+La+Piedad/@20.340875,-102.0253344,17z/data=!4m14!1m7!3m6!1s0x842c1f01c89ba013:0x4a304673e50316ce!2sSantuario+del+Se%C3%B1or+de+La+Piedad!8m2!3d20.340875!4d-102.0227595!16s%2Fg%2F1q5bn7rcy!3m5!1s0x842c1f01c89ba013:0x4a304673e50316ce!8m2!3d20.340875!4d-102.0227595!16s%2Fg%2F1q5bn7rcy?entry=ttu&g_ep=EgoyMDI2MDgwMy4wIKXMDSoASAFQAw%3D%3D"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+              Ver ubicación
+            </a>
+          </article>
+
+          <article class="event-card" data-aos="fade-up" data-aos-delay="220">
+            <div class="event-card__icon">
+              <i class="fa-solid fa-champagne-glasses" aria-hidden="true"></i>
+            </div>
+
+            <p class="event-card__type">Recepción</p>
+            <h3 class="event-card__title">Salón Turquesa</h3>
+            <p class="event-card__time">6:30 PM</p>
+
+            <p class="event-card__address">
+              La Piedad, Michoacán<br>
+              México
+            </p>
+
+            <!-- Reemplaza # por el enlace de Google Maps -->
+            <a
+              class="button button--outline"
+              href="https://www.google.com/maps/place/Sal%C3%B3n+Turquesa%2FTerraza+Le%C3%B3n+hoteles+cerca/@20.3686192,-102.0272236,18z/data=!4m14!1m7!3m6!1s0x842c1fb959837fd9:0xc95277f598660b52!2sSal%C3%B3n+Turquesa%2FTerraza+Le%C3%B3n+hoteles+cerca!8m2!3d20.3689235!4d-102.0270922!16s%2Fg%2F11j4b7v718!3m5!1s0x842c1fb959837fd9:0xc95277f598660b52!8m2!3d20.3689235!4d-102.0270922!16s%2Fg%2F11j4b7v718?entry=ttu&g_ep=EgoyMDI2MDgwMy4wIKXMDSoASAFQAw%3D%3D"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+              Ver ubicación
+            </a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================
+         6. CÓDIGO DE VESTIMENTA
+    ======================================================= -->
+    <section class="section section--black dress-code-section">
+      <div class="dress-code-section__glow" aria-hidden="true"></div>
+
+      <div class="container container--narrow">
+        <div class="dress-code__icon" data-aos="zoom-in">
+          <i class="fa-solid fa-user-tie" aria-hidden="true"></i>
+        </div>
+
+        <p class="section-kicker section-kicker--gold" data-aos="fade-up">
+          Código de vestimenta
+        </p>
+
+        <h2 class="section-title section-title--light" data-aos="fade-up">
+          Todos de negro
+        </h2>
+
+        <p class="dress-code__text" data-aos="fade-up" data-aos-delay="100">
+          Queremos crear una noche elegante y especial. Agradecemos que todos
+          nuestros invitados asistan vestidos de negro.
+        </p>
+
+        <div class="dress-code__swatches" data-aos="fade-up" data-aos-delay="180">
+          <span aria-label="Negro"></span>
+          <span aria-label="Negro carbón"></span>
+          <span aria-label="Negro suave"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================
+         7. GALERÍA
+    ======================================================= -->
+    <section class="section section--marble gallery-section" id="galeria">
+      <div class="container">
+        <p class="section-kicker" data-aos="fade-up">Nuestra historia</p>
+        <h2 class="section-title" data-aos="fade-up">Momentos que amamos</h2>
+
+        <div class="swiper gallery-swiper" data-aos="fade-up" data-aos-delay="150">
+          <div class="swiper-wrapper">
+            <div class="swiper-slide">
+              <figure class="gallery-card">
+                <img
+                  src="assets/images/galeria-1.jpg"
+                  alt="Luis Ángel y Mariana"
+                  loading="lazy"
+                >
+              </figure>
+            </div>
+
+            <div class="swiper-slide">
+              <figure class="gallery-card">
+                <img
+                  src="assets/images/galeria-2.jpg"
+                  alt="Luis Ángel y Mariana celebrando juntos"
+                  loading="lazy"
+                >
+              </figure>
+            </div>
+
+            <div class="swiper-slide">
+              <figure class="gallery-card">
+                <img
+                  src="assets/images/galeria-3.jpg"
+                  alt="Luis Ángel y Mariana en un momento especial"
+                  loading="lazy"
+                >
+              </figure>
+            </div>
+
+            <div class="swiper-slide">
+              <figure class="gallery-card">
+                <img
+                  src="assets/images/galeria-4.jpg"
+                  alt="Recuerdo de Luis Ángel y Mariana"
+                  loading="lazy"
+                >
+              </figure>
+            </div>
+
+            <div class="swiper-slide">
+  <figure class="gallery-card">
+    <img
+      src="assets/images/galeria-5.jpg"
+      alt="Recuerdo de Luis Ángel y Mariana"
+      loading="lazy"
+    >
+  </figure>
+</div>
+
+<div class="swiper-slide">
+  <figure class="gallery-card">
+    <img
+      src="assets/images/galeria-6.jpg"
+      alt="Recuerdo de Luis Ángel y Mariana"
+      loading="lazy"
+    >
+  </figure>
+</div>
+
+<div class="swiper-slide">
+  <figure class="gallery-card">
+    <img
+      src="assets/images/galeria-7.jpg"
+      alt="Recuerdo de Luis Ángel y Mariana"
+      loading="lazy"
+    >
+  </figure>
+</div>
+
+<div class="swiper-slide">
+  <figure class="gallery-card">
+    <img
+      src="assets/images/galeria-8.jpg"
+      alt="Recuerdo de Luis Ángel y Mariana"
+      loading="lazy"
+    >
+  </figure>
+</div>
+
+<div class="swiper-slide">
+  <figure class="gallery-card">
+    <img
+      src="assets/images/galeria-9.jpg"
+      alt="Recuerdo de Luis Ángel y Mariana"
+      loading="lazy"
+    >
+  </figure>
+</div>
+
+<div class="swiper-slide">
+  <figure class="gallery-card">
+    <img
+      src="assets/images/galeria-10.jpg"
+      alt="Recuerdo de Luis Ángel y Mariana"
+      loading="lazy"
+    >
+  </figure>
+</div>
+
+<div class="swiper-slide">
+  <figure class="gallery-card">
+    <img
+      src="assets/images/galeria-11.jpg"
+      alt="Recuerdo de Luis Ángel y Mariana"
+      loading="lazy"
+    >
+  </figure>
+</div>
+
+<div class="swiper-slide">
+  <figure class="gallery-card">
+    <img
+      src="assets/images/galeria-12.jpg"
+      alt="Recuerdo de Luis Ángel y Mariana"
+      loading="lazy"
+    >
+  </figure>
+</div>
+
+<div class="swiper-slide">
+  <figure class="gallery-card">
+    <img
+      src="assets/images/galeria-13.jpg"
+      alt="Recuerdo de Luis Ángel y Mariana"
+      loading="lazy"
+    >
+  </figure>
+</div>
+
+<div class="swiper-slide">
+  <figure class="gallery-card">
+    <img
+      src="assets/images/galeria-14.jpg"
+      alt="Recuerdo de Luis Ángel y Mariana"
+      loading="lazy"
+    >
+  </figure>
+</div>
+
+<div class="swiper-slide">
+  <figure class="gallery-card">
+    <img
+      src="assets/images/galeria-15.jpg"
+      alt="Recuerdo de Luis Ángel y Mariana"
+      loading="lazy"
+    >
+  </figure>
+</div>
+
+<div class="swiper-slide">
+  <figure class="gallery-card">
+    <img
+      src="assets/images/galeria-16.jpg"
+      alt="Recuerdo de Luis Ángel y Mariana"
+      loading="lazy"
+    >
+  </figure>
+</div>
+
+<div class="swiper-slide">
+  <figure class="gallery-card">
+    <img
+      src="assets/images/galeria-17.jpg"
+      alt="Recuerdo de Luis Ángel y Mariana"
+      loading="lazy"
+    >
+  </figure>
+</div>
+
+<div class="swiper-slide">
+  <figure class="gallery-card">
+    <img
+      src="assets/images/galeria-18.jpg"
+      alt="Recuerdo de Luis Ángel y Mariana"
+      loading="lazy"
+    >
+  </figure>
+</div>
+
+<div class="swiper-slide">
+  <figure class="gallery-card">
+    <img
+      src="assets/images/galeria-19.jpg"
+      alt="Recuerdo de Luis Ángel y Mariana"
+      loading="lazy"
+    >
+  </figure>
+</div>
+
+          </div>
+
+          <div class="swiper-pagination"></div>
+
+          <button class="swiper-button-prev" aria-label="Fotografía anterior"></button>
+          <button class="swiper-button-next" aria-label="Fotografía siguiente"></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================
+         8. CONFIRMACIÓN
+    ======================================================= -->
+    <section class="section rsvp-section" id="confirmacion">
+      <div class="rsvp-card" data-aos="zoom-in">
+        <div class="rsvp-card__floral" aria-hidden="true"></div>
+
+        <p class="section-kicker">Confirma tu asistencia</p>
+        <h2 class="section-title">Nos encantará celebrar contigo</h2>
+
+        <p class="rsvp-card__deadline">
+          Confirma antes del
+          <strong>10 de diciembre de 2026</strong>
+        </p>
+
+        <p class="rsvp-card__text">
+          Ayúdanos a preparar cada detalle confirmando tu asistencia por WhatsApp.
+        </p>
+
+        <!-- Cambia el número por el WhatsApp definitivo, incluyendo código de país -->
+        <a
+          class="button button--gold"
+          href="https://wa.me/+523521248499?text=Hola%2C%20confirmo%20mi%20asistencia%20a%20la%20boda%20de%20Luis%20%C3%81ngel%20y%20Mariana."
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
+          Confirmar por WhatsApp
+        </a>
+      </div>
+    </section>
+
+    <!-- ======================================================
+         9. CIERRE
+    ======================================================= -->
+    <section class="final-section">
+      <div class="final-section__overlay" aria-hidden="true"></div>
+
+      <div class="final-section__content" data-aos="fade-up">
+        <p class="final-section__phrase">
+          El amor no se mira, se siente, y aún más cuando ella está junto a ti.
+        </p>
+
+        <div class="gold-divider gold-divider--light" aria-hidden="true">
+          <span></span>
+          <i class="fa-solid fa-diamond"></i>
+          <span></span>
+        </div>
+
+        <h2 class="final-section__names">Luis Ángel & Mariana</h2>
+        <p class="final-section__date">09 · 01 · 2027</p>
+        <p class="final-section__thanks">Gracias por ser parte de nuestra historia</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Luis Ángel & Mariana</p>
+    <span>09.01.2027</span>
+  </footer>
+
+  <!-- Librerías JavaScript -->
+  <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+  <!-- JavaScript principal -->
+  <script src="script.js"></script>
+</body>
+</html>

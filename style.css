@@ -1,0 +1,1157 @@
+/* =========================================================
+   INVITACIÓN LUIS ÁNGEL & MARIANA
+   Versión 1.0
+   Diseño mobile-first
+========================================================= */
+
+/* =========================================================
+   1. VARIABLES
+========================================================= */
+
+:root {
+  --color-white: #ffffff;
+  --color-ivory: #f8f6f1;
+  --color-marble: #efede8;
+  --color-black: #101010;
+  --color-charcoal: #1b1b1b;
+  --color-gray: #6f6b65;
+  --color-gold: #b89552;
+  --color-gold-light: #d7bf87;
+  --color-gold-dark: #8c6d32;
+
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --font-body: "Montserrat", Arial, sans-serif;
+
+  --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.09);
+  --shadow-dark: 0 18px 50px rgba(0, 0, 0, 0.24);
+
+  --radius-small: 10px;
+  --radius-medium: 20px;
+  --radius-large: 32px;
+
+  --container-width: 1160px;
+  --transition: 260ms ease;
+}
+
+/* =========================================================
+   2. RESET Y BASE
+========================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  overflow-x: hidden;
+  color: var(--color-black);
+  background: var(--color-white);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body.is-loading {
+  overflow: hidden;
+}
+
+img {
+  display: block;
+  width: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  border: 0;
+}
+
+/* Textura ligera para evitar fondos completamente planos */
+.page-noise {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image:
+    radial-gradient(circle at 20% 20%, #000 0.7px, transparent 0.8px),
+    radial-gradient(circle at 80% 60%, #000 0.5px, transparent 0.7px);
+  background-size: 6px 6px, 8px 8px;
+}
+
+/* =========================================================
+   3. UTILIDADES
+========================================================= */
+
+.container {
+  width: min(100% - 40px, var(--container-width));
+  margin-inline: auto;
+}
+
+.container--narrow {
+  width: min(100% - 40px, 760px);
+}
+
+.section {
+  position: relative;
+  padding: 88px 0;
+  overflow: hidden;
+}
+
+.section--marble {
+  background-image:
+    linear-gradient(
+      rgba(255, 255, 255, 0.42),
+      rgba(255, 255, 255, 0.42)
+    ),
+    url("assets/images/marmol-blanco.jpg");
+
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: scroll;
+}
+
+.section--dark {
+  color: var(--color-white);
+  background:
+    linear-gradient(145deg, rgba(9, 9, 9, 0.98), rgba(30, 30, 30, 0.96)),
+    url("assets/images/textura-negra.jpg") center / cover;
+}
+
+.section--black {
+  color: var(--color-white);
+  background: var(--color-black);
+}
+
+.section-kicker {
+  margin: 0 0 10px;
+  color: var(--color-gold-dark);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.section-kicker--light {
+  color: var(--color-gold-light);
+}
+
+.section-kicker--gold {
+  color: var(--color-gold-light);
+}
+
+.section-title {
+  max-width: 820px;
+  margin: 0 auto;
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 8vw, 4.4rem);
+  font-weight: 500;
+  line-height: 1.02;
+  text-align: center;
+}
+
+.section-title--light {
+  color: var(--color-white);
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--color-gold-light);
+  font-size: clamp(0.85rem, 1.2vw, 1rem);
+  font-weight: 500;
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+}
+
+.gold-divider,
+.ornament {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.gold-divider span,
+.ornament span {
+  width: 62px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-gold),
+    transparent
+  );
+}
+
+.gold-divider i,
+.ornament i {
+  color: var(--color-gold);
+  font-size: 0.65rem;
+}
+
+.gold-divider--light span {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-gold-light),
+    transparent
+  );
+}
+
+.button {
+  display: inline-flex;
+  min-height: 50px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 13px 22px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition:
+    transform var(--transition),
+    background-color var(--transition),
+    border-color var(--transition),
+    color var(--transition),
+    box-shadow var(--transition);
+}
+
+.button:hover {
+  transform: translateY(-2px);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 4px;
+}
+
+.button--outline {
+  border: 1px solid var(--color-gold);
+  color: var(--color-black);
+  background: transparent;
+}
+
+.button--outline:hover {
+  color: var(--color-white);
+  background: var(--color-gold-dark);
+  border-color: var(--color-gold-dark);
+}
+
+.button--gold {
+  color: var(--color-black);
+  background: linear-gradient(
+    135deg,
+    var(--color-gold-light),
+    var(--color-gold)
+  );
+  box-shadow: 0 12px 30px rgba(184, 149, 82, 0.28);
+}
+
+.button--gold:hover {
+  box-shadow: 0 16px 34px rgba(184, 149, 82, 0.36);
+}
+
+/* =========================================================
+   4. PRELOADER
+========================================================= */
+
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-content: center;
+  background: var(--color-black);
+  transition:
+    opacity 600ms ease,
+    visibility 600ms ease;
+}
+
+.preloader.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.preloader__monogram {
+  color: var(--color-white);
+  font-family: var(--font-display);
+  font-size: 3.3rem;
+  letter-spacing: 0.08em;
+}
+
+.preloader__monogram span {
+  margin-inline: 4px;
+  color: var(--color-gold);
+  font-size: 2rem;
+}
+
+.preloader__line {
+  width: 140px;
+  height: 1px;
+  margin-top: 20px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.preloader__line::after {
+  content: "";
+  display: block;
+  width: 45%;
+  height: 100%;
+  background: var(--color-gold);
+  animation: loadingLine 1.2s ease-in-out infinite;
+}
+
+@keyframes loadingLine {
+  from {
+    transform: translateX(-110%);
+  }
+
+  to {
+    transform: translateX(330%);
+  }
+}
+
+/* =========================================================
+   5. BOTÓN DE MÚSICA
+========================================================= */
+
+.music-button {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 1000;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(215, 191, 135, 0.78);
+  border-radius: 50%;
+  color: var(--color-white);
+  background: rgba(16, 16, 16, 0.92);
+  box-shadow: var(--shadow-dark);
+  cursor: pointer;
+  transition:
+    transform var(--transition),
+    background-color var(--transition);
+  backdrop-filter: blur(8px);
+}
+
+.music-button:hover {
+  transform: scale(1.05);
+}
+
+.music-button.is-playing i {
+  animation: rotateMusic 4s linear infinite;
+}
+
+.music-button__rings,
+.music-button__rings::before {
+  position: absolute;
+  inset: -5px;
+  border: 1px solid rgba(184, 149, 82, 0.45);
+  border-radius: 50%;
+  content: "";
+  opacity: 0;
+}
+
+.music-button.is-playing .music-button__rings,
+.music-button.is-playing .music-button__rings::before {
+  animation: musicPulse 2s ease-out infinite;
+}
+
+.music-button.is-playing .music-button__rings::before {
+  animation-delay: 0.75s;
+}
+
+@keyframes rotateMusic {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes musicPulse {
+  0% {
+    opacity: 0.6;
+    transform: scale(0.85);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.55);
+  }
+}
+
+/* =========================================================
+   6. HERO
+========================================================= */
+
+.hero {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  color: var(--color-white);
+  background:
+    url("assets/images/portada.jpg") center / cover no-repeat,
+    linear-gradient(145deg, #181818, #050505);
+}
+
+.hero__overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.48),
+      rgba(0, 0, 0, 0.36) 45%,
+      rgba(0, 0, 0, 0.68)
+    );
+}
+
+.hero__content {
+  position: relative;
+  z-index: 2;
+  width: min(100% - 40px, 850px);
+  padding: 80px 0 70px;
+  text-align: center;
+}
+
+.hero__title {
+  display: flex;
+  flex-direction: column;
+  margin: 22px 0 26px;
+  font-family: var(--font-display);
+  font-size: clamp(3.4rem, 16vw, 7.4rem);
+  font-weight: 500;
+  line-height: 0.76;
+  text-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
+}
+
+.hero__ampersand {
+  margin: 18px 0;
+  color: var(--color-gold-light);
+  font-size: 0.6em;
+  font-style: italic;
+  line-height: 1;
+}
+
+.hero__date {
+  margin: 24px 0 4px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  letter-spacing: 0.35em;
+}
+
+.hero__location {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.scroll-indicator {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  margin-top: 58px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.scroll-indicator i {
+  color: var(--color-gold-light);
+  animation: scrollBounce 1.8s ease-in-out infinite;
+}
+
+@keyframes scrollBounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(7px);
+  }
+}
+
+.hero__floral {
+  position: absolute;
+  z-index: 1;
+  width: 250px;
+  height: 250px;
+  opacity: 0.94;
+  pointer-events: none;
+  background:
+    url("assets/images/flores-blancas.png") center / contain no-repeat;
+}
+
+.hero__floral--top {
+  top: -75px;
+  right: -72px;
+  transform: rotate(18deg);
+}
+
+.hero__floral--bottom {
+  bottom: -82px;
+  left: -80px;
+  transform: rotate(198deg);
+}
+
+/* =========================================================
+   7. MENSAJE
+========================================================= */
+
+.message-section {
+  text-align: center;
+}
+
+.ornament {
+  margin: 28px 0;
+}
+
+.message-text {
+  max-width: 680px;
+  margin: 0 auto 18px;
+  color: var(--color-gray);
+  font-size: 0.96rem;
+}
+
+.message-text--accent {
+  color: var(--color-black);
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-style: italic;
+}
+
+/* =========================================================
+   8. CUENTA REGRESIVA
+========================================================= */
+
+.countdown-section {
+  text-align: center;
+}
+
+.countdown {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 44px;
+}
+
+.countdown__item {
+  min-height: 132px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(215, 191, 135, 0.28);
+  background: rgba(255, 255, 255, 0.035);
+  backdrop-filter: blur(8px);
+}
+
+.countdown__number {
+  color: var(--color-gold-light);
+  font-family: var(--font-display);
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.countdown__label {
+  margin-top: 9px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.65rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.countdown__separator {
+  display: none;
+}
+
+/* =========================================================
+   9. FECHA
+========================================================= */
+
+.date-card {
+  position: relative;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 46px 24px;
+  border: 1px solid rgba(184, 149, 82, 0.48);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: var(--shadow-soft);
+  text-align: center;
+}
+
+.date-card::before,
+.date-card::after {
+  position: absolute;
+  width: 52px;
+  height: 52px;
+  content: "";
+  border-color: var(--color-gold);
+}
+
+.date-card::before {
+  top: 10px;
+  left: 10px;
+  border-top: 1px solid;
+  border-left: 1px solid;
+}
+
+.date-card::after {
+  right: 10px;
+  bottom: 10px;
+  border-right: 1px solid;
+  border-bottom: 1px solid;
+}
+
+.date-card__month {
+  margin: 0;
+  color: var(--color-gold-dark);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.date-card__main {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 18px;
+  margin: 25px 0;
+}
+
+.date-card__day-name,
+.date-card__year {
+  padding-block: 10px;
+  border-block: 1px solid rgba(184, 149, 82, 0.38);
+  color: var(--color-gray);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.date-card__number {
+  font-family: var(--font-display);
+  font-size: 5rem;
+  line-height: 0.9;
+}
+
+.date-card__phrase {
+  margin: 0;
+  color: var(--color-gray);
+  font-family: var(--font-display);
+  font-size: 1.28rem;
+  font-style: italic;
+}
+
+/* =========================================================
+   10. EVENTOS
+========================================================= */
+
+.events-section {
+  background: var(--color-white);
+}
+
+.events-grid {
+  display: grid;
+  gap: 24px;
+  margin-top: 44px;
+}
+
+.event-card {
+  position: relative;
+  padding: 40px 25px;
+  border: 1px solid rgba(184, 149, 82, 0.32);
+  background: var(--color-white);
+  box-shadow: var(--shadow-soft);
+  text-align: center;
+  transition:
+    transform var(--transition),
+    box-shadow var(--transition);
+}
+
+.event-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.12);
+}
+
+.event-card__icon {
+  width: 68px;
+  height: 68px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 20px;
+  border: 1px solid var(--color-gold);
+  border-radius: 50%;
+  color: var(--color-gold-dark);
+  font-size: 1.45rem;
+}
+
+.event-card__type {
+  margin: 0;
+  color: var(--color-gold-dark);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.event-card__title {
+  margin: 14px auto 6px;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 500;
+  line-height: 1.05;
+}
+
+.event-card__time {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.event-card__address {
+  margin: 18px 0 26px;
+  color: var(--color-gray);
+  font-size: 0.83rem;
+}
+
+/* =========================================================
+   11. CÓDIGO DE VESTIMENTA
+========================================================= */
+
+.dress-code-section {
+  text-align: center;
+}
+
+.dress-code-section__glow {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(184, 149, 82, 0.13),
+    transparent 67%
+  );
+  transform: translateX(-50%);
+}
+
+.dress-code__icon {
+  position: relative;
+  z-index: 1;
+  width: 76px;
+  height: 76px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 25px;
+  border: 1px solid rgba(215, 191, 135, 0.65);
+  border-radius: 50%;
+  color: var(--color-gold-light);
+  font-size: 1.6rem;
+}
+
+.dress-code__text {
+  position: relative;
+  z-index: 1;
+  max-width: 610px;
+  margin: 24px auto 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.9rem;
+}
+
+.dress-code__swatches {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.dress-code__swatches span {
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(215, 191, 135, 0.5);
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.03);
+}
+
+.dress-code__swatches span:nth-child(1) {
+  background: #000000;
+}
+
+.dress-code__swatches span:nth-child(2) {
+  background: #171717;
+}
+
+.dress-code__swatches span:nth-child(3) {
+  background: #292929;
+}
+
+/* =========================================================
+   12. GALERÍA
+========================================================= */
+
+.gallery-swiper {
+  max-width: 980px;
+  margin-top: 44px;
+  padding: 0 0 48px;
+}
+
+.gallery-card {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  margin: 0;
+  overflow: hidden;
+  background: #e8e5df;
+  box-shadow: var(--shadow-soft);
+}
+
+.gallery-card::after {
+  position: absolute;
+  inset: 12px;
+  content: "";
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  pointer-events: none;
+}
+
+.gallery-card img {
+  height: 100%;
+  object-fit: cover;
+  transition: transform 700ms ease;
+}
+
+.gallery-card:hover img {
+  transform: scale(1.035);
+}
+
+.gallery-swiper .swiper-pagination-bullet {
+  width: 7px;
+  height: 7px;
+  background: var(--color-gold-dark);
+  opacity: 0.35;
+}
+
+.gallery-swiper .swiper-pagination-bullet-active {
+  width: 24px;
+  border-radius: 20px;
+  opacity: 1;
+}
+
+.gallery-swiper .swiper-button-prev,
+.gallery-swiper .swiper-button-next {
+  display: none;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--color-gold);
+  border-radius: 50%;
+  color: var(--color-gold-dark);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.gallery-swiper .swiper-button-prev::after,
+.gallery-swiper .swiper-button-next::after {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* =========================================================
+   13. CONFIRMACIÓN
+========================================================= */
+
+.rsvp-section {
+  padding-inline: 20px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8)),
+    url("assets/images/fondo-rsvp.jpg") center / cover no-repeat;
+}
+
+.rsvp-card {
+  position: relative;
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 58px 24px;
+  overflow: hidden;
+  border: 1px solid rgba(184, 149, 82, 0.5);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--shadow-soft);
+  text-align: center;
+}
+
+.rsvp-card__floral {
+  position: absolute;
+  top: -75px;
+  right: -75px;
+  width: 230px;
+  height: 230px;
+  opacity: 0.12;
+  background:
+    url("assets/images/flores-blancas.png") center / contain no-repeat;
+  filter: brightness(0);
+  transform: rotate(25deg);
+}
+
+.rsvp-card__deadline {
+  margin: 26px auto 0;
+  font-size: 0.86rem;
+}
+
+.rsvp-card__deadline strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-gold-dark);
+  font-family: var(--font-display);
+  font-size: 1.38rem;
+  font-weight: 600;
+}
+
+.rsvp-card__text {
+  max-width: 580px;
+  margin: 19px auto 28px;
+  color: var(--color-gray);
+  font-size: 0.88rem;
+}
+
+/* =========================================================
+   14. CIERRE
+========================================================= */
+
+.final-section {
+  position: relative;
+  min-height: 78svh;
+  display: grid;
+  place-items: center;
+  padding: 90px 20px;
+  overflow: hidden;
+  color: var(--color-white);
+  background:
+    url("assets/images/cierre.jpg") center / cover no-repeat,
+    linear-gradient(145deg, #151515, #050505);
+}
+
+.final-section__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.58),
+    rgba(0, 0, 0, 0.72)
+  );
+}
+
+.final-section__content {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  text-align: center;
+}
+
+.final-section__phrase {
+  margin: 0 auto 30px;
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 7vw, 3rem);
+  font-style: italic;
+  line-height: 1.2;
+}
+
+.final-section__names {
+  margin: 30px 0 8px;
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 10vw, 5.2rem);
+  font-weight: 500;
+  line-height: 1;
+}
+
+.final-section__date {
+  margin: 0;
+  color: var(--color-gold-light);
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+}
+
+.final-section__thanks {
+  margin: 18px 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* =========================================================
+   15. FOOTER
+========================================================= */
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  color: rgba(255, 255, 255, 0.56);
+  background: #080808;
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.footer p {
+  margin: 0;
+}
+
+.footer span {
+  color: var(--color-gold-light);
+}
+
+/* =========================================================
+   16. MEDIA QUERIES
+========================================================= */
+
+@media (min-width: 600px) {
+  .section {
+    padding: 110px 0;
+  }
+
+  .hero__title {
+    line-height: 0.82;
+  }
+
+  .countdown {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .events-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gallery-swiper .swiper-button-prev,
+  .gallery-swiper .swiper-button-next {
+    display: flex;
+  }
+
+  .rsvp-card {
+    padding: 78px 60px;
+  }
+}
+
+@media (min-width: 900px) {
+  .section {
+    padding: 132px 0;
+  }
+
+.hero__content {
+  width: min(100% - 80px, 1180px);
+  padding-top: 110px;
+}
+
+.hero__title {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  font-size: clamp(3.8rem, 5.4vw, 5.6rem);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+  .hero__ampersand {
+    margin: 0;
+    font-size: 0.5em;
+  }
+
+  .hero__floral {
+    width: 390px;
+    height: 390px;
+  }
+
+  .hero__floral--top {
+    top: -120px;
+    right: -90px;
+  }
+
+  .hero__floral--bottom {
+    bottom: -135px;
+    left: -120px;
+  }
+
+  .countdown {
+    max-width: 850px;
+    margin-inline: auto;
+  }
+
+  .countdown__item {
+    min-height: 160px;
+  }
+
+  .countdown__number {
+    font-size: 4rem;
+  }
+
+  .event-card {
+    padding: 54px 46px;
+  }
+
+  .music-button {
+    right: 28px;
+    bottom: 28px;
+    width: 58px;
+    height: 58px;
+  }
+}
+
+/* Reduce animaciones para usuarios que así lo prefieren */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.final-section {
+  background:
+    url("assets/images/cierre.jpg") center / cover no-repeat,
+    linear-gradient(145deg, #151515, #050505);
+}
