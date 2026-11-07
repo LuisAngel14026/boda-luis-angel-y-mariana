@@ -1,279 +1,963 @@
-/**
- * Invitación de boda
- * Luis Ángel & Mariana
- * Versión 1.0
- */
+const CONFIG = {
+  weddingDate: new Date('2027-01-09T17:00:00-06:00'),
+  galleryCount: 5,
+  galleryFallback: 'assets/images/galeria-1.jpg',
+  amazonUrl: 'https://www.amazon.com.mx/wedding/guest-view/32YBN92ETQM34'
+};
 
-"use strict";
+/* ============================================================
+   MESA DE REGALOS — EDITA AQUÍ TUS DATOS
+   Por ahora se dejan números de ejemplo.
+============================================================ */
+const GIFT_DATA = {
+  banks: [
+    {
+      owner: 'Luis Ángel',
+      bank: 'BANAMEX',
+      clabe: '002496702162009671',
+      card: '5204166176174094'
+    },
+    {
+      owner: 'Mariana',
+      bank: 'BBVA',
+      clabe: '012513015548029217',
+      card: '4152314064455812'
+    }
+  ]
+};
 
-/* =========================================================
-   1. CONFIGURACIÓN GENERAL
-========================================================= */
+/* ---------------- PRELOADER ---------------- */
+const preloader = document.getElementById('preloader');
 
-/**
- * Fecha de la boda.
- * Formato recomendado: YYYY-MM-DDTHH:mm:ss
- * Se utiliza la hora local de La Piedad, Michoacán.
- */
-const WEDDING_DATE = "2027-01-09T17:00:00";
+/* 5.7 s: alcanza a apreciarse el corazón, varios latidos y
+   prácticamente una vuelta completa de la lucecita dorada. */
+const PRELOADER_DURATION = 5700;
+const preloaderStartedAt = performance.now();
 
-/* =========================================================
-   2. PRELOADER
-========================================================= */
+function hidePreloader() {
+  if (!preloader || preloader.classList.contains('is-hidden')) return;
+  document.body.classList.remove('is-loading');
+  preloader.classList.add('is-hidden');
+  setTimeout(() => preloader.remove(), 850);
+}
 
-const preloader = document.getElementById("preloader");
+/* El loader tiene duración fija y NO espera a las fotografías. */
+setTimeout(hidePreloader, PRELOADER_DURATION);
 
-/**
- * Oculta la pantalla de carga cuando todos los recursos
- * principales han terminado de cargarse.
- */
-window.addEventListener("load", () => {
-  window.setTimeout(() => {
-    preloader?.classList.add("is-hidden");
-    document.body.classList.remove("is-loading");
-  }, 450);
+/* Si el navegador restaura la página desde memoria (atrás/adelante),
+   respeta el tiempo restante en lugar de ocultarlo casi de inmediato. */
+window.addEventListener('pageshow', (event) => {
+  if (!event.persisted) return;
+  const elapsed = performance.now() - preloaderStartedAt;
+  const remaining = Math.max(0, PRELOADER_DURATION - elapsed);
+  setTimeout(hidePreloader, remaining);
 });
 
-/**
- * Evita el desplazamiento mientras aparece el preloader.
- */
-document.body.classList.add("is-loading");
-
-/* =========================================================
-   3. AOS
-========================================================= */
-
-if (typeof AOS !== "undefined") {
+/* ---------------- AOS ---------------- */
+if (window.AOS) {
   AOS.init({
-    duration: 900,
-    easing: "ease-out-cubic",
-    once: true,
-    offset: 50,
-    disable: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    duration: 1050,
+    once: false,
+    mirror: true,
+    offset: 58,
+    easing: 'cubic-bezier(.16,.84,.32,1)'
+  });
+  window.addEventListener('pageshow', () => AOS.refreshHard());
+}
+
+/* ---------------- MUSIC ---------------- */
+const musicButton = document.getElementById('musicButton');
+const music = document.getElementById('backgroundMusic');
+function syncMusicButton() {
+  const playing = !music.paused;
+  musicButton.classList.toggle('is-playing', playing);
+  musicButton.setAttribute('aria-pressed', String(playing));
+  musicButton.setAttribute('aria-label', playing ? 'Pausar música' : 'Reproducir música');
+}
+musicButton.addEventListener('click', async () => {
+  try {
+    if (music.paused) await music.play();
+    else music.pause();
+  } catch (err) {
+    showToast('Agrega tu MP3 en assets/audio/cancion-instrumental.mp3');
+  }
+  syncMusicButton();
+});
+music.addEventListener('play', syncMusicButton);
+music.addEventListener('pause', syncMusicButton);
+
+/* ---------------- COUNTDOWN ---------------- */
+const countdown = {
+  days: document.getElementById('days'),
+  hours: document.getElementById('hours'),
+  minutes: document.getElementById('minutes'),
+  seconds: document.getElementById('seconds')
+};
+function updateCountdown() {
+  const diff = CONFIG.weddingDate.getTime() - Date.now();
+  if (diff <= 0) {
+    countdown.days.textContent = '000';
+    countdown.hours.textContent = '00';
+    countdown.minutes.textContent = '00';
+    countdown.seconds.textContent = '00';
+    return;
+  }
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  countdown.days.textContent = String(d).padStart(3, '0');
+  countdown.hours.textContent = String(h).padStart(2, '0');
+  countdown.minutes.textContent = String(m).padStart(2, '0');
+  countdown.seconds.textContent = String(s).padStart(2, '0');
+}
+updateCountdown();
+setInterval(updateCountdown, 1000);
+
+/* ---------------- GALLERY ---------------- */
+/*
+  Optimización V3.4
+  - La página NO descarga las 19 fotos al abrir.
+  - Cuando el usuario se acerca a la galería, precarga las primeras.
+  - Después carga el resto de manera progresiva en tiempos ociosos.
+  - Si existen galeria-1.webp ... galeria-19.webp, usa esas versiones.
+  - Si todavía no existen, vuelve automáticamente a los JPG originales.
+*/
+const gallerySlides = document.getElementById('gallerySlides');
+const gallerySection = document.getElementById('galeria');
+const galleryImages = [];
+
+for (let i = 1; i <= CONFIG.galleryCount; i += 1) {
+  const slide = document.createElement('div');
+  slide.className = 'swiper-slide';
+
+  slide.innerHTML = `
+    <figure class="gallery-card">
+      <span class="gallery-photo-loader" aria-hidden="true"></span>
+      <img
+        alt="Luis Ángel y Mariana — fotografía ${i}"
+        decoding="async"
+        loading="lazy"
+        fetchpriority="low"
+        data-index="${i}"
+      >
+    </figure>`;
+
+  const img = slide.querySelector('img');
+
+  img.addEventListener('load', () => {
+    img.classList.add('is-loaded');
+    img.closest('.gallery-card')?.classList.add('is-loaded');
+  });
+
+  img.addEventListener('error', () => {
+    /* Si por alguna razón falla WebP, usa el JPG original. */
+    if (img.dataset.extension === 'webp' && !img.dataset.jpgFallback) {
+      img.dataset.jpgFallback = '1';
+      img.dataset.extension = 'jpg';
+      img.src = `assets/images/galeria-${i}.jpg`;
+    }
+  });
+
+  galleryImages.push(img);
+  gallerySlides.appendChild(slide);
+}
+
+/* Detecta una sola vez si las versiones WebP ya existen. */
+let galleryExtensionPromise = null;
+function detectGalleryExtension() {
+  if (galleryExtensionPromise) return galleryExtensionPromise;
+
+  galleryExtensionPromise = new Promise((resolve) => {
+    const probe = new Image();
+    probe.onload = () => resolve('webp');
+    probe.onerror = () => resolve('jpg');
+    probe.src = 'assets/images/galeria-1.webp';
+  });
+
+  return galleryExtensionPromise;
+}
+
+async function loadGalleryImage(index, priority = 'low') {
+  const img = galleryImages[index];
+  if (!img || img.dataset.loadedRequested === '1') return;
+
+  img.dataset.loadedRequested = '1';
+  img.fetchPriority = priority;
+
+  const extension = await detectGalleryExtension();
+  img.dataset.extension = extension;
+  img.src = `assets/images/galeria-${index + 1}.${extension}`;
+}
+
+function loadGalleryNeighborhood(activeIndex = 0) {
+  const indexes = new Set([
+    activeIndex,
+    activeIndex - 1,
+    activeIndex + 1,
+    activeIndex + 2
+  ]);
+
+  indexes.forEach((index) => {
+    if (index >= 0 && index < galleryImages.length) {
+      loadGalleryImage(index, index === activeIndex ? 'high' : 'low');
+    }
   });
 }
 
-/* =========================================================
-   4. SWIPER
-========================================================= */
+function scheduleRemainingGalleryImages() {
+  let next = 5;
 
-if (typeof Swiper !== "undefined") {
-  new Swiper(".gallery-swiper", {
+  const loadBatch = () => {
+    const limit = Math.min(next + 2, galleryImages.length);
+
+    while (next < limit) {
+      loadGalleryImage(next, 'low');
+      next += 1;
+    }
+
+    if (next < galleryImages.length) {
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(loadBatch, { timeout: 1200 });
+      } else {
+        setTimeout(loadBatch, 450);
+      }
+    }
+  };
+
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(loadBatch, { timeout: 1000 });
+  } else {
+    setTimeout(loadBatch, 450);
+  }
+}
+
+/* Fondo collage optimizado: UNA sola imagen WebP liviana.
+   Ya no se cargan 19 fotos adicionales detrás del carrusel. */
+
+/* Corazones delicados alrededor de la galería. */
+const galleryHearts = document.getElementById('galleryHearts');
+if (galleryHearts) {
+  const heartLayout = [
+    [4,8,20,.50,4.6,-.7],[16,10,16,.33,5.1,-2.2],[84,9,18,.42,4.8,-1.4],[95,13,24,.46,5.5,-3.0],
+    [5,20,28,.46,5.2,-1.2],[94,23,19,.42,4.4,-2.5],[10,31,16,.35,5.8,-.4],[89,32,22,.45,5.0,-3.4],
+    [3,42,21,.40,4.9,-1.8],[96,43,27,.38,5.9,-2.1],[7,54,18,.36,5.4,-3.7],[92,55,20,.42,4.6,-.9],
+    [4,66,26,.39,6.2,-2.8],[96,67,17,.47,4.7,-1.1],[10,77,22,.44,5.0,-4.0],[89,79,29,.35,6.0,-.2],
+    [5,89,18,.42,4.5,-2.6],[17,93,15,.32,5.3,-.8],[83,92,16,.38,5.6,-3.1],[95,87,25,.43,4.9,-1.6],
+    [27,13,13,.28,4.7,-3.6],[72,14,14,.30,5.1,-.5],[25,88,14,.30,5.7,-2.3],[74,89,13,.28,4.8,-3.8]
+  ];
+
+  heartLayout.forEach(([x,y,size,opacity,duration,delay]) => {
+    const heart = document.createElement('span');
+    heart.className = 'gallery-floating-heart';
+    heart.textContent = '♡';
+    heart.style.setProperty('--x', `${x}%`);
+    heart.style.setProperty('--y', `${y}%`);
+    heart.style.setProperty('--size', `${size}px`);
+    heart.style.setProperty('--opacity', opacity);
+    heart.style.setProperty('--duration', `${duration}s`);
+    heart.style.setProperty('--delay', `${delay}s`);
+    galleryHearts.appendChild(heart);
+  });
+}
+
+let gallerySwiper = null;
+
+if (window.Swiper) {
+  gallerySwiper = new Swiper('.gallery-swiper', {
     loop: true,
-    speed: 750,
-    spaceBetween: 18,
+    speed: 1150,
+    spaceBetween: 14,
     centeredSlides: true,
     grabCursor: true,
+    slidesPerView: 1.06,
     autoplay: {
-      delay: 3800,
+      delay: 2200,
       disableOnInteraction: false,
-      pauseOnMouseEnter: true
+      pauseOnMouseEnter: false,
+      waitForTransition: false
     },
     pagination: {
-    el: ".swiper-pagination",
-    clickable: true,
-    dynamicBullets: true
-    },
-    navigation: {
-      nextEl: ".swiper-button-next",
-      prevEl: ".swiper-button-prev"
+      el: '.swiper-pagination',
+      clickable: true,
+      dynamicBullets: true
     },
     breakpoints: {
-      0: {
-        slidesPerView: 1.08
+      390: { slidesPerView: 1.08 },
+      430: { slidesPerView: 1.1 }
+    },
+    on: {
+      init(swiper) {
+        setTimeout(() => swiper.autoplay.start(), 120);
       },
-      600: {
-        slidesPerView: 1.7
+      slideChange(swiper) {
+        const real = Number.isFinite(swiper.realIndex) ? swiper.realIndex : 0;
+        loadGalleryNeighborhood(real);
       },
-      900: {
-        slidesPerView: 2.35
+      touchEnd(swiper) {
+        setTimeout(() => swiper.autoplay.start(), 80);
+      },
+      transitionEnd(swiper) {
+        if (!swiper.autoplay.running) swiper.autoplay.start();
       }
     }
   });
+
+  const galleryEl = document.querySelector('.gallery-swiper');
+  ['pointerup', 'pointerleave', 'touchend', 'mouseup', 'mouseleave'].forEach((eventName) => {
+    galleryEl.addEventListener(eventName, () => {
+      setTimeout(() => gallerySwiper?.autoplay?.start(), 80);
+    }, { passive: true });
+  });
 }
 
-/* =========================================================
-   5. CUENTA REGRESIVA
-========================================================= */
+/* Empieza a preparar las fotos ANTES de que la galería llegue a pantalla,
+   sin castigar la carga inicial de la invitación. */
+let galleryWarmStarted = false;
+function warmGallery() {
+  if (galleryWarmStarted) return;
+  galleryWarmStarted = true;
 
-const countdownElements = {
-  days: document.getElementById("days"),
-  hours: document.getElementById("hours"),
-  minutes: document.getElementById("minutes"),
-  seconds: document.getElementById("seconds")
-};
+  for (let i = 0; i < Math.min(5, galleryImages.length); i += 1) {
+    loadGalleryImage(i, i === 0 ? 'high' : 'low');
+  }
 
-const weddingTimestamp = new Date(WEDDING_DATE).getTime();
-
-/**
- * Convierte un número a texto con ceros a la izquierda.
- *
- * @param {number} value Número que se desea formatear.
- * @param {number} digits Cantidad mínima de dígitos.
- * @returns {string}
- */
-function padNumber(value, digits = 2) {
-  return String(value).padStart(digits, "0");
+  scheduleRemainingGalleryImages();
 }
 
-/**
- * Actualiza los valores visibles de la cuenta regresiva.
- */
-function updateCountdown() {
-  const now = Date.now();
-  const distance = weddingTimestamp - now;
+if ('IntersectionObserver' in window && gallerySection) {
+  const galleryObserver = new IntersectionObserver((entries, observer) => {
+    if (entries.some(entry => entry.isIntersecting)) {
+      warmGallery();
+      observer.disconnect();
+    }
+  }, {
+    root: null,
+    rootMargin: '1400px 0px',
+    threshold: 0
+  });
 
-  if (Number.isNaN(weddingTimestamp)) {
-    console.error("La fecha de la boda no tiene un formato válido.");
-    return;
-  }
-
-  if (distance <= 0) {
-    countdownElements.days.textContent = "000";
-    countdownElements.hours.textContent = "00";
-    countdownElements.minutes.textContent = "00";
-    countdownElements.seconds.textContent = "00";
-    return;
-  }
-
-  const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-  const hours = Math.floor(
-    (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-  );
-  const minutes = Math.floor(
-    (distance % (1000 * 60 * 60)) / (1000 * 60)
-  );
-  const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-  countdownElements.days.textContent = padNumber(days, 3);
-  countdownElements.hours.textContent = padNumber(hours);
-  countdownElements.minutes.textContent = padNumber(minutes);
-  countdownElements.seconds.textContent = padNumber(seconds);
+  galleryObserver.observe(gallerySection);
+} else {
+  setTimeout(warmGallery, 1800);
 }
 
-updateCountdown();
-window.setInterval(updateCountdown, 1000);
+/* ---------------- MESA DE REGALOS ---------------- */
+/*
+  Se transforma únicamente la sección #regalos.
+  No modifica ninguna otra pantalla de la invitación.
+*/
+const giftsSection = document.getElementById('regalos');
 
-/* =========================================================
-   6. REPRODUCTOR DE MÚSICA
-========================================================= */
+if (giftsSection) {
+  giftsSection.classList.remove('art-section', 'art-section--interactive');
+  giftsSection.classList.add('gift-section-premium');
 
-const musicButton = document.getElementById("musicButton");
-const backgroundMusic = document.getElementById("backgroundMusic");
+  const bankCards = GIFT_DATA.banks.map((item, index) => `
+    <article class="gift-bank-card">
+      <div class="gift-bank-heading">
+        <div>
+          <p class="gift-bank-owner">${escapeHtml(item.owner)}</p>
+          <p class="gift-bank-name">${escapeHtml(item.bank)}</p>
+        </div>
+        <span class="gift-bank-icon" aria-hidden="true">
+          <i class="fa-solid fa-building-columns"></i>
+        </span>
+      </div>
 
-let isMusicPlaying = false;
+      <div class="gift-bank-row">
+        <div class="gift-bank-copy">
+          <span class="gift-bank-label">CLABE interbancaria</span>
+          <strong>${escapeHtml(item.clabe)}</strong>
+        </div>
+        <button
+          class="gift-copy-button"
+          type="button"
+          data-copy-gift="${escapeHtml(item.clabe)}"
+          aria-label="Copiar CLABE de ${escapeHtml(item.owner)}"
+        >
+          <i class="fa-regular fa-copy"></i>
+        </button>
+      </div>
 
-/**
- * Sincroniza el estado visual y accesible del botón de música.
- *
- * @param {boolean} playing Indica si el audio se está reproduciendo.
- */
-function updateMusicButton(playing) {
-  isMusicPlaying = playing;
+      <div class="gift-bank-row">
+        <div class="gift-bank-copy">
+          <span class="gift-bank-label">Número de tarjeta</span>
+          <strong>${escapeHtml(item.card)}</strong>
+        </div>
+        <button
+          class="gift-copy-button"
+          type="button"
+          data-copy-gift="${escapeHtml(item.card.replace(/\s/g, ''))}"
+          aria-label="Copiar número de tarjeta de ${escapeHtml(item.owner)}"
+        >
+          <i class="fa-regular fa-copy"></i>
+        </button>
+      </div>
+    </article>
+  `).join('');
 
-  musicButton.classList.toggle("is-playing", playing);
-  musicButton.setAttribute("aria-pressed", String(playing));
-  musicButton.setAttribute(
-    "aria-label",
-    playing ? "Pausar música" : "Reproducir música"
-  );
+  giftsSection.innerHTML = `
+    <div class="gift-premium-shell">
+      <div class="gift-premium-icon" aria-hidden="true">
+        <i class="fa-solid fa-gift"></i>
+      </div>
 
-  const icon = musicButton.querySelector("i");
+      <p class="gift-premium-kicker">MESA DE REGALOS</p>
+      <span class="gift-premium-separator" aria-hidden="true"></span>
 
-  if (icon) {
-    icon.className = playing
-      ? "fa-solid fa-pause"
-      : "fa-solid fa-music";
-  }
-}
+      <h2>Tu compañía es<br>nuestro mejor regalo</h2>
 
-/**
- * Reproduce o pausa la canción.
- * Los navegadores móviles exigen una interacción del usuario
- * antes de iniciar audio, por eso se utiliza un botón.
- */
-async function toggleMusic() {
-  if (!backgroundMusic) {
-    return;
-  }
+      <div class="gift-premium-heartline" aria-hidden="true">
+        <span></span><i class="fa-solid fa-heart"></i><span></span>
+      </div>
 
-  try {
-    if (isMusicPlaying) {
-      backgroundMusic.pause();
-      updateMusicButton(false);
+      <p class="gift-premium-intro">
+        Si desean tener un detalle con nosotros, les compartimos algunas opciones
+        para hacerlo de la manera que les sea más cómoda.
+      </p>
+
+      <div class="gift-premium-block">
+        <div class="gift-premium-block-title">
+          <i class="fa-solid fa-gift" aria-hidden="true"></i>
+          <span>Mesa de regalos</span>
+        </div>
+
+        <button class="gift-amazon-button" id="amazonButton" type="button">
+          <span class="gift-amazon-mark" aria-hidden="true">a</span>
+          <span>VER MESA EN AMAZON</span>
+          <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <div class="gift-premium-block gift-premium-block--detail">
+        <div class="gift-premium-block-title">
+          <i class="fa-regular fa-credit-card" aria-hidden="true"></i>
+          <span>Detalle con cariño</span>
+        </div>
+
+        <p class="gift-premium-detail-copy">
+          Si desean acompañarnos también en este nuevo comienzo,
+          cualquier detalle será recibido con muchísimo cariño y gratitud.
+        </p>
+
+        <button
+          class="gift-options-button"
+          id="giftOptionsButton"
+          type="button"
+          aria-expanded="false"
+          aria-controls="giftBankOptions"
+        >
+          <span>VER OPCIONES</span>
+          <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <div class="gift-bank-panel" id="giftBankOptions" hidden>
+        ${bankCards}
+      </div>
+
+      <p class="gift-premium-thanks">
+        Gracias por acompañarnos en este momento tan especial.
+      </p>
+    </div>
+  `;
+
+  const amazonButton = document.getElementById('amazonButton');
+  amazonButton?.addEventListener('click', () => {
+    if (!CONFIG.amazonUrl) {
+      showToast('Falta agregar la liga final de Amazon en script.js');
       return;
     }
+    window.open(CONFIG.amazonUrl, '_blank', 'noopener,noreferrer');
+  });
 
-    await backgroundMusic.play();
-    updateMusicButton(true);
-  } catch (error) {
-    console.warn(
-      "No fue posible reproducir el audio. Verifica que el archivo MP3 exista.",
-      error
-    );
-    updateMusicButton(false);
-  }
-}
+  const optionsButton = document.getElementById('giftOptionsButton');
+  const bankPanel = document.getElementById('giftBankOptions');
 
-musicButton?.addEventListener("click", toggleMusic);
+  optionsButton?.addEventListener('click', () => {
+    const willOpen = bankPanel.hasAttribute('hidden');
 
-backgroundMusic?.addEventListener("ended", () => {
-  updateMusicButton(false);
-});
-
-backgroundMusic?.addEventListener("pause", () => {
-  if (!backgroundMusic.ended) {
-    updateMusicButton(false);
-  }
-});
-
-backgroundMusic?.addEventListener("play", () => {
-  updateMusicButton(true);
-});
-
-/* =========================================================
-   7. ENLACES INTERNOS
-========================================================= */
-
-/**
- * Desplazamiento suave para enlaces internos.
- * Se mantiene una alternativa por JavaScript para navegadores
- * que no respeten correctamente scroll-behavior.
- */
-document.querySelectorAll('a[href^="#"]').forEach((link) => {
-  link.addEventListener("click", (event) => {
-    const targetId = link.getAttribute("href");
-
-    if (!targetId || targetId === "#") {
-      return;
+    if (willOpen) {
+      bankPanel.removeAttribute('hidden');
+      requestAnimationFrame(() => bankPanel.classList.add('is-open'));
+    } else {
+      bankPanel.classList.remove('is-open');
+      setTimeout(() => bankPanel.setAttribute('hidden', ''), 280);
     }
 
-    const target = document.querySelector(targetId);
+    optionsButton.setAttribute('aria-expanded', String(willOpen));
+    optionsButton.classList.toggle('is-open', willOpen);
+  });
 
-    if (!target) {
-      return;
-    }
+  giftsSection.querySelectorAll('[data-copy-gift]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const value = button.dataset.copyGift || '';
 
-    event.preventDefault();
-
-    target.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
+      try {
+        await navigator.clipboard.writeText(value);
+        showToast('Dato copiado');
+      } catch {
+        const textarea = document.createElement('textarea');
+        textarea.value = value;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        textarea.remove();
+        showToast('Dato copiado');
+      }
     });
   });
-});
+}
 
-/* =========================================================
-   8. OPTIMIZACIÓN DE VISIBILIDAD
-========================================================= */
+/* ---------------- RSVP CONECTADO A GOOGLE SHEETS ---------------- */
+const RSVP_API_URL = 'https://script.google.com/macros/s/AKfycbwRoGjbY3YW6JxNB2k9CmnTFuN8a6JpJO4Je7axU47HwBOeGdTyxgJaHrCThzap_6pU/exec';
+const params = new URLSearchParams(location.search);
+const rsvpToken = params.get('r');
+let invitation = null;
+let invitationError = '';
+let invitationLoading = Boolean(rsvpToken);
+let jsonpCounter = 0;
 
-/**
- * Pausa el audio si la pestaña deja de estar visible durante
- * un periodo prolongado. No vuelve a reproducirlo automáticamente,
- * para respetar la decisión del usuario.
- */
-document.addEventListener("visibilitychange", () => {
-  if (document.hidden && isMusicPlaying) {
-    backgroundMusic.pause();
+const modal = document.getElementById('rsvpModal');
+const screenStart = document.getElementById('rsvpScreenStart');
+const screenDecline = document.getElementById('rsvpScreenDecline');
+const screenDone = document.getElementById('rsvpScreenDone');
+const familyEl = document.getElementById('rsvpFamily');
+const placesEl = document.getElementById('rsvpPlaces');
+const guestListEl = document.getElementById('rsvpGuestList');
+const yesCountEl = document.getElementById('rsvpYesCount');
+const totalCountEl = document.getElementById('rsvpTotalCount');
+const validationEl = document.getElementById('rsvpValidation');
+const doneTitleEl = document.getElementById('rsvpDoneTitle');
+const doneTextEl = document.getElementById('rsvpDoneText');
+const saveButton = document.getElementById('rsvpSave');
+const declineButton = document.getElementById('rsvpConfirmDecline');
+
+function requestRsvpJsonp(query) {
+  return new Promise((resolve, reject) => {
+    const callbackName = `rsvpJsonp_${Date.now()}_${++jsonpCounter}`;
+    const script = document.createElement('script');
+    let timeoutId;
+    let settled = false;
+
+    const cleanup = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      delete window[callbackName];
+      script.remove();
+    };
+
+    window[callbackName] = (data) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(data);
+    };
+
+    script.async = true;
+    script.onerror = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error('No pudimos conectar con el sistema de confirmaciones. Intenta de nuevo.'));
+    };
+
+    const url = new URL(RSVP_API_URL);
+    Object.entries(query).forEach(([key, value]) => url.searchParams.set(key, String(value)));
+    url.searchParams.set('callback', callbackName);
+    url.searchParams.set('_ts', String(Date.now()));
+    script.src = url.toString();
+
+    timeoutId = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error('El sistema tardó demasiado en responder. Intenta de nuevo.'));
+    }, 15000);
+
+    document.head.appendChild(script);
+  });
+}
+
+function normalizeSheetAnswer(value) {
+  if (value === 'Asiste') return 'yes';
+  if (value === 'No asiste') return 'no';
+  return '';
+}
+
+function mapServerInvitation(data) {
+  return {
+    family: data.family,
+    guests: data.guests.map((guest) => ({
+      id: guest.id,
+      name: guest.isOpenSlot ? 'Acompañante' : guest.name,
+      type: guest.isOpenSlot ? 'open' : 'fixed',
+      category: guest.category,
+      answer: guest.answer || 'Pendiente',
+      companionName: guest.companionName || ''
+    }))
+  };
+}
+
+async function loadInvitationFromSheet() {
+  if (!rsvpToken) return null;
+  const data = await requestRsvpJsonp({ action: 'family', token: rsvpToken });
+  if (!data || !data.ok) {
+    throw new Error(data?.message || 'Esta invitación no está disponible. Revisa el enlace con los novios.');
   }
+
+  invitation = mapServerInvitation(data);
+  familyEl.textContent = `Invitación de ${invitation.family}`;
+  placesEl.textContent = `${invitation.guests.length} lugares reservados`;
+  totalCountEl.textContent = invitation.guests.length;
+  return invitation;
+}
+
+if (rsvpToken) {
+  loadInvitationFromSheet()
+    .catch((error) => { invitationError = error.message; })
+    .finally(() => { invitationLoading = false; });
+}
+
+function setScreen(name) {
+  screenStart.hidden = name !== 'start';
+  screenDecline.hidden = name !== 'decline';
+  screenDone.hidden = name !== 'done';
+}
+
+function openRsvp(name = 'start') {
+  if (!invitation) {
+    showToast(invitationLoading
+      ? 'Estamos verificando tu invitación. Intenta en unos segundos.'
+      : (invitationError || 'Usa el enlace personalizado que te enviaron los novios.'));
+    return;
+  }
+
+  setScreen(name);
+  modal.classList.add('is-open');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('modal-open');
+}
+
+function closeRsvp() {
+  modal.classList.remove('is-open');
+  modal.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('modal-open');
+}
+
+document
+  .querySelectorAll('[data-close-rsvp]')
+  .forEach(el => el.addEventListener('click', closeRsvp));
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeRsvp();
 });
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function getServerAnswers() {
+  const saved = {};
+  if (!invitation) return saved;
+
+  invitation.guests.forEach((guest, index) => {
+    saved[index] = {
+      response: normalizeSheetAnswer(guest.answer),
+      companionName: guest.companionName || ''
+    };
+  });
+  return saved;
+}
+
+function buildGuestList(saved = {}) {
+  if (!invitation) return;
+  guestListEl.innerHTML = '';
+
+  invitation.guests.forEach((guest, index) => {
+    const savedItem = saved[index] || { response: '', companionName: '' };
+    const isOpen = guest.type === 'open';
+    const item = document.createElement('article');
+    item.className = 'rsvp-guest';
+
+    item.innerHTML = `
+      <p class="rsvp-guest-name">
+        ${escapeHtml(guest.name)}
+        ${isOpen ? '<span class="rsvp-open-badge">Lugar abierto</span>' : ''}
+      </p>
+
+      <div class="rsvp-choices">
+        <div class="rsvp-choice">
+          <input
+            type="radio"
+            id="g-${index}-yes"
+            name="guest-${index}"
+            value="yes"
+            ${savedItem.response === 'yes' ? 'checked' : ''}
+          >
+          <label for="g-${index}-yes">Sí asistirá</label>
+        </div>
+
+        <div class="rsvp-choice">
+          <input
+            type="radio"
+            id="g-${index}-no"
+            name="guest-${index}"
+            value="no"
+            ${savedItem.response === 'no' ? 'checked' : ''}
+          >
+          <label for="g-${index}-no">No asistirá</label>
+        </div>
+      </div>
+
+      ${isOpen ? `
+        <div
+          class="rsvp-companion-field"
+          id="companion-wrap-${index}"
+          ${savedItem.response === 'yes' ? '' : 'hidden'}
+        >
+          <label for="companion-${index}">Nombre completo del acompañante</label>
+          <input
+            type="text"
+            id="companion-${index}"
+            maxlength="80"
+            autocomplete="name"
+            placeholder="Nombre y apellidos"
+            value="${escapeHtml(savedItem.companionName || '')}"
+          >
+        </div>
+      ` : ''}
+    `;
+
+    guestListEl.appendChild(item);
+
+    if (isOpen) {
+      const yesRadio = item.querySelector(`#g-${index}-yes`);
+      const noRadio = item.querySelector(`#g-${index}-no`);
+      const companionWrap = item.querySelector(`#companion-wrap-${index}`);
+      const companionInput = item.querySelector(`#companion-${index}`);
+
+      const syncCompanionField = () => {
+        companionWrap.hidden = !yesRadio.checked;
+        if (noRadio.checked && !guest.companionName) companionInput.value = '';
+      };
+
+      yesRadio.addEventListener('change', syncCompanionField);
+      noRadio.addEventListener('change', syncCompanionField);
+    }
+  });
+
+  guestListEl
+    .querySelectorAll('input[type="radio"]')
+    .forEach(input => input.addEventListener('change', updateSummary));
+
+  updateSummary();
+}
+
+function getAnswers() {
+  const result = {};
+  if (!invitation) return result;
+
+  invitation.guests.forEach((guest, index) => {
+    const selected = document.querySelector(`input[name="guest-${index}"]:checked`);
+    if (!selected) return;
+
+    result[index] = { response: selected.value, companionName: '' };
+    if (guest.type === 'open' && selected.value === 'yes') {
+      const nameInput = document.getElementById(`companion-${index}`);
+      result[index].companionName = nameInput?.value.trim() || '';
+    }
+  });
+  return result;
+}
+
+function updateSummary() {
+  const answers = getAnswers();
+  const yes = Object.values(answers).filter(item => item.response === 'yes').length;
+  yesCountEl.textContent = yes;
+  validationEl.hidden = true;
+}
+
+function validateAnswers(answers) {
+  if (!invitation) return 'Invitación no encontrada.';
+  if (Object.keys(answers).length !== invitation.guests.length) {
+    return 'Falta responder Sí o No para uno o más invitados.';
+  }
+
+  for (let index = 0; index < invitation.guests.length; index += 1) {
+    const guest = invitation.guests[index];
+    const answer = answers[index];
+    if (guest.type === 'open' && answer.response === 'yes' && !answer.companionName) {
+      return 'Escribe el nombre completo del acompañante.';
+    }
+  }
+  return '';
+}
+
+function getConfirmedNames(answers) {
+  return invitation.guests.flatMap((guest, index) => {
+    const answer = answers[index] || {};
+    if (answer.response !== 'yes') return [];
+    if (guest.type === 'open') {
+      return [answer.companionName || guest.companionName || 'Acompañante'];
+    }
+    return [guest.name];
+  });
+}
+
+function renderSaved(payload) {
+  if (payload.type === 'declined') {
+    doneTitleEl.textContent = 'Hemos registrado que no podrán asistir.';
+    doneTextEl.textContent = `La respuesta de ${invitation.family} quedó registrada en la lista de invitados.`;
+  } else {
+    const names = getConfirmedNames(payload.answers);
+    doneTitleEl.textContent = `${names.length} de ${invitation.guests.length} asistirán.`;
+    doneTextEl.textContent = names.length
+      ? `Confirmados: ${names.join(', ')}.`
+      : 'No se confirmó ningún asistente.';
+  }
+  openRsvp('done');
+}
+
+let rsvpSaving = false;
+
+async function saveRsvp(type, answers) {
+  // Evita envíos duplicados si el invitado toca el botón varias veces.
+  if (rsvpSaving) return;
+  rsvpSaving = true;
+
+  const payload = {
+    token: rsvpToken,
+    answers: invitation.guests.map((guest, index) => ({
+      guestId: guest.id,
+      answer: answers[index].response === 'yes' ? 'Asiste' : 'No asiste',
+      ...(guest.type === 'open' && answers[index].response === 'yes'
+        ? { companionName: answers[index].companionName }
+        : {})
+    }))
+  };
+
+  const activeButton = type === 'declined' ? declineButton : saveButton;
+  const originalContent = activeButton.innerHTML;
+  const buttons = [saveButton, declineButton];
+
+  buttons.forEach(button => {
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+  });
+  activeButton.classList.add('is-loading');
+  activeButton.innerHTML = '<span class="rsvp-spinner" aria-hidden="true"></span><span>Guardando respuesta…</span>';
+
+  try {
+    // POST simple (text/plain) para evitar preflight CORS en la aplicación web de Apps Script.
+    await fetch(RSVP_API_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+
+    // Verificamos leyendo de nuevo la hoja; no damos por guardada una respuesta sin comprobarla.
+    const verification = await requestRsvpJsonp({ action: 'family', token: rsvpToken });
+    if (!verification || !verification.ok) {
+      throw new Error(verification?.message || 'No pudimos verificar el guardado.');
+    }
+
+    const savedById = new Map(verification.guests.map(guest => [guest.id, guest]));
+    for (let index = 0; index < invitation.guests.length; index += 1) {
+      const originalGuest = invitation.guests[index];
+      const savedGuest = savedById.get(originalGuest.id);
+      const expectedAnswer = answers[index].response === 'yes' ? 'Asiste' : 'No asiste';
+      if (!savedGuest || savedGuest.answer !== expectedAnswer) {
+        throw new Error('La hoja todavía no refleja todas las respuestas. Intenta guardar nuevamente.');
+      }
+      if (originalGuest.type === 'open' && expectedAnswer === 'Asiste'
+          && savedGuest.companionName !== answers[index].companionName) {
+        throw new Error('No pudimos verificar el nombre del acompañante. Intenta nuevamente.');
+      }
+    }
+
+    invitation = mapServerInvitation(verification);
+    renderSaved({ type, answers });
+  } catch (error) {
+    validationEl.textContent = error.message || 'No se pudo guardar la respuesta. Intenta nuevamente.';
+    validationEl.hidden = false;
+    showToast(validationEl.textContent);
+  } finally {
+    activeButton.classList.remove('is-loading');
+    activeButton.innerHTML = originalContent;
+    buttons.forEach(button => {
+      button.disabled = false;
+      button.removeAttribute('aria-busy');
+    });
+    rsvpSaving = false;
+  }
+}
+
+document.getElementById('rsvpYes').addEventListener('click', () => {
+  if (!invitation) {
+    openRsvp('start');
+    return;
+  }
+  buildGuestList(getServerAnswers());
+  openRsvp('start');
+});
+
+document.getElementById('rsvpNo').addEventListener('click', () => {
+  if (!invitation) {
+    openRsvp('decline');
+    return;
+  }
+  openRsvp('decline');
+});
+
+saveButton.addEventListener('click', async () => {
+  const answers = getAnswers();
+  const error = validateAnswers(answers);
+  if (error) {
+    validationEl.textContent = error;
+    validationEl.hidden = false;
+    return;
+  }
+  await saveRsvp('confirmed', answers);
+});
+
+declineButton.addEventListener('click', async () => {
+  if (!invitation) {
+    openRsvp('decline');
+    return;
+  }
+  const answers = {};
+  invitation.guests.forEach((guest, index) => {
+    answers[index] = { response: 'no', companionName: '' };
+  });
+  await saveRsvp('declined', answers);
+});
+
+document.getElementById('rsvpDeclineBack').addEventListener('click', () => {
+  closeRsvp();
+});
+
+document.getElementById('rsvpEdit').addEventListener('click', () => {
+  if (!invitation) return;
+  buildGuestList(getServerAnswers());
+  setScreen('start');
+});
+
+/* ---------------- TOAST ---------------- */
+const toast = document.getElementById('toast');
+let toastTimer;
+function showToast(message) {
+  toast.textContent = message;
+  toast.classList.add('is-visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('is-visible'), 3200);
+}
