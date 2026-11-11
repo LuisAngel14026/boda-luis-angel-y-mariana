@@ -557,7 +557,7 @@ body:not(.is-loading) .music-button {
 
 /* ---------------- RSVP ART HOTSPOTS ---------------- */
 .rsvp-yes-hotspot { left: 21%; top: 71.25%; width: 57%; height: 7.3%; }
-.rsvp-no-hotspot { left: 21%; top: 80.15%; width: 57%; height: 7.55%; }
+
 
 /* ---------------- RSVP MODAL ---------------- */
 .rsvp-modal {

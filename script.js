@@ -736,7 +736,7 @@ function buildGuestList(saved = {}) {
     guidance = document.createElement('p');
     guidance.id = 'rsvpPartialGuidance';
     guidance.className = 'rsvp-copy';
-    guidance.textContent = 'Por favor, responde únicamente por las personas que conoces directamente o de tu familia. Las demás podrán confirmar después con este mismo enlace.';
+    guidance.textContent = 'Selecciona únicamente a las personas por las que deseas responder. Los demás familiares podrán compartir su respuesta después con este mismo enlace.';
     guestListEl.parentNode.insertBefore(guidance, guestListEl);
   }
 
@@ -763,7 +763,7 @@ function buildGuestList(saved = {}) {
             ${savedItem.response === 'yes' ? 'checked' : ''}
             ${guest.answer && guest.answer !== 'Pendiente' ? 'disabled' : ''}
           >
-          <label for="g-${index}-yes">Sí asistirá</label>
+          <label for="g-${index}-yes">Sí asistiré</label>
         </div>
 
         <div class="rsvp-choice">
@@ -775,7 +775,7 @@ function buildGuestList(saved = {}) {
             ${savedItem.response === 'no' ? 'checked' : ''}
             ${guest.answer && guest.answer !== 'Pendiente' ? 'disabled' : ''}
           >
-          <label for="g-${index}-no">No asistirá</label>
+          <label for="g-${index}-no">Con mucho cariño, no podré acompañarlos</label>
         </div>
       </div>
 
@@ -968,8 +968,8 @@ async function saveRsvp(type, answers) {
 
     invitation = mapServerInvitation(verification);
     const confirmed = invitation.guests.filter(guest => guest.answer === 'Asiste').length;
-    doneTitleEl.textContent = '¡Respuesta guardada!';
-    doneTextEl.textContent = `${submitted.length} respuesta(s) registradas. En total, ${confirmed} de ${invitation.guests.length} invitados han confirmado. Las personas pendientes podrán responder después con este mismo enlace.`;
+    doneTitleEl.textContent = '¡Muchas gracias por compartirnos tu respuesta!';
+    doneTextEl.textContent = `${submitted.length} respuesta(s) registradas. En total, ${confirmed} de ${invitation.guests.length} invitados han confirmado su asistencia. Los demás familiares podrán responder después con este mismo enlace.`;
     openRsvp('done');
   } catch (error) {
     validationEl.textContent = error.message || 'No se pudo guardar la respuesta. Intenta nuevamente.';
