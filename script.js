@@ -730,6 +730,16 @@ function buildGuestList(saved = {}) {
   if (!invitation) return;
   guestListEl.innerHTML = '';
 
+  // Orientación para familias que comparten un mismo enlace.
+  let guidance = document.getElementById('rsvpPartialGuidance');
+  if (!guidance) {
+    guidance = document.createElement('p');
+    guidance.id = 'rsvpPartialGuidance';
+    guidance.className = 'rsvp-copy';
+    guidance.textContent = 'Por favor, responde únicamente por las personas que conoces directamente o de tu familia. Las demás podrán confirmar después con este mismo enlace.';
+    guestListEl.parentNode.insertBefore(guidance, guestListEl);
+  }
+
   invitation.guests.forEach((guest, index) => {
     const savedItem = saved[index] || { response: '', companionName: '' };
     const isOpen = guest.type === 'open';
@@ -834,8 +844,14 @@ function getAnswers() {
 
 function updateSummary() {
   const answers = getAnswers();
-  const yes = Object.values(answers).filter(item => item.response === 'yes').length;
-  yesCountEl.textContent = yes;
+  // Cuenta también los "Asiste" que ya están guardados en Google Sheets.
+  // getAnswers() solo incluye respuestas nuevas de invitados pendientes.
+  const alreadyConfirmed = invitation
+    ? invitation.guests.filter(guest => guest.answer === 'Asiste').length
+    : 0;
+  const newlyConfirmed = Object.values(answers)
+    .filter(item => item.response === 'yes').length;
+  yesCountEl.textContent = alreadyConfirmed + newlyConfirmed;
   validationEl.hidden = true;
 }
 
