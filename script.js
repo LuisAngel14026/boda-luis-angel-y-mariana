@@ -536,7 +536,7 @@ const doneTextEl = document.getElementById('rsvpDoneText');
 const saveButton = document.getElementById('rsvpSave');
 const declineButton = document.getElementById('rsvpConfirmDecline');
 
-function requestRsvpJsonp(query) {
+function requestRsvpJsonpOnce(query) {
   return new Promise((resolve, reject) => {
     const callbackName = `rsvpJsonp_${Date.now()}_${++jsonpCounter}`;
     const script = document.createElement('script');
@@ -561,7 +561,7 @@ function requestRsvpJsonp(query) {
       if (settled) return;
       settled = true;
       cleanup();
-      reject(new Error('No pudimos conectar con el sistema de confirmaciones. Intenta de nuevo.'));
+      reject(new Error('No pudimos conectar con Google. Revisa tu conexión e intenta nuevamente.'));
     };
 
     const url = new URL(RSVP_API_URL);
@@ -574,11 +574,26 @@ function requestRsvpJsonp(query) {
       if (settled) return;
       settled = true;
       cleanup();
-      reject(new Error('El sistema tardó demasiado en responder. Intenta de nuevo.'));
-    }, 15000);
+      reject(new Error('Google tardó demasiado en responder. Vuelve a tocar el botón para reintentar.'));
+    }, 25000);
 
     document.head.appendChild(script);
   });
+}
+
+// Dos intentos automáticos ayudan cuando el navegador interno de Messenger
+// tarda en completar la redirección de Google Apps Script.
+async function requestRsvpJsonp(query) {
+  let lastError;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      return await requestRsvpJsonpOnce(query);
+    } catch (error) {
+      lastError = error;
+      if (attempt === 0) await new Promise(resolve => setTimeout(resolve, 900));
+    }
+  }
+  throw lastError || new Error('No pudimos consultar la invitación.');
 }
 
 function normalizeSheetAnswer(value) {
@@ -601,24 +616,43 @@ function mapServerInvitation(data) {
   };
 }
 
+let invitationPromise = null;
+
 async function loadInvitationFromSheet() {
   if (!rsvpToken) return null;
-  const data = await requestRsvpJsonp({ action: 'family', token: rsvpToken });
-  if (!data || !data.ok) {
-    throw new Error(data?.message || 'Esta invitación no está disponible. Revisa el enlace con los novios.');
-  }
+  if (invitation) return invitation;
+  if (invitationPromise) return invitationPromise;
 
-  invitation = mapServerInvitation(data);
-  familyEl.textContent = `Invitación de ${invitation.family}`;
-  placesEl.textContent = `${invitation.guests.length} lugares reservados`;
-  totalCountEl.textContent = invitation.guests.length;
-  return invitation;
+  invitationLoading = true;
+  invitationError = '';
+  invitationPromise = (async () => {
+    const data = await requestRsvpJsonp({ action: 'family', token: rsvpToken });
+    if (!data || !data.ok) {
+      throw new Error(data?.message || 'Esta invitación no está disponible. Revisa el enlace con los novios.');
+    }
+
+    invitation = mapServerInvitation(data);
+    familyEl.textContent = `Invitación de ${invitation.family}`;
+    placesEl.textContent = `${invitation.guests.length} lugares reservados`;
+    totalCountEl.textContent = invitation.guests.length;
+    return invitation;
+  })();
+
+  try {
+    return await invitationPromise;
+  } catch (error) {
+    invitationError = error?.message || 'No pudimos verificar esta invitación. Intenta nuevamente.';
+    throw error;
+  } finally {
+    invitationLoading = false;
+    invitationPromise = null;
+  }
 }
 
 if (rsvpToken) {
-  loadInvitationFromSheet()
-    .catch((error) => { invitationError = error.message; })
-    .finally(() => { invitationLoading = false; });
+  loadInvitationFromSheet().catch(() => {
+    // El error se conserva para mostrarlo y permitir reintentar al tocar RSVP.
+  });
 }
 
 function setScreen(name) {
@@ -629,9 +663,24 @@ function setScreen(name) {
 
 function openRsvp(name = 'start') {
   if (!invitation) {
-    showToast(invitationLoading
-      ? 'Estamos verificando tu invitación. Intenta en unos segundos.'
-      : (invitationError || 'Usa el enlace personalizado que te enviaron los novios.'));
+    if (!rsvpToken) {
+      showToast('Usa el enlace personalizado que te enviaron los novios.');
+      return;
+    }
+    if (invitationLoading) {
+      showToast('Estamos verificando tu invitación. Espera un momento y vuelve a tocar.');
+      return;
+    }
+
+    showToast('No se pudo conectar. Estamos intentando nuevamente…');
+    loadInvitationFromSheet()
+      .then(() => {
+        if (name === 'start') buildGuestList(getServerAnswers());
+        openRsvp(name);
+      })
+      .catch(error => {
+        showToast(error?.message || 'No pudimos cargar tu invitación. Intenta nuevamente.');
+      });
     return;
   }
 
