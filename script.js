@@ -836,13 +836,16 @@ function updateSummary() {
 
 function validateAnswers(answers) {
   if (!invitation) return 'Invitación no encontrada.';
-  if (Object.keys(answers).length !== invitation.guests.length) {
-    return 'Falta responder Sí o No para uno o más invitados.';
+  const answeredIndexes = Object.keys(answers);
+  if (!answeredIndexes.length) {
+    return 'Selecciona Sí o No para al menos una persona.';
   }
 
-  for (let index = 0; index < invitation.guests.length; index += 1) {
+  for (const indexText of answeredIndexes) {
+    const index = Number(indexText);
     const guest = invitation.guests[index];
     const answer = answers[index];
+    if (!guest || !answer) return 'Hay una respuesta inválida. Recarga la invitación.';
     if (guest.type === 'open' && answer.response === 'yes' && !answer.companionName) {
       return 'Escribe el nombre completo del acompañante.';
     }
@@ -882,16 +885,19 @@ async function saveRsvp(type, answers) {
   if (rsvpSaving) return;
   rsvpSaving = true;
 
-  const payload = {
-    token: rsvpToken,
-    answers: invitation.guests.map((guest, index) => ({
+  // Enviar únicamente las personas que fueron contestadas en esta ocasión.
+  // Las demás permanecen intactas en Google Sheets.
+  const submitted = Object.entries(answers).map(([indexText, answer]) => {
+    const guest = invitation.guests[Number(indexText)];
+    return {
       guestId: guest.id,
-      answer: answers[index].response === 'yes' ? 'Asiste' : 'No asiste',
-      ...(guest.type === 'open' && answers[index].response === 'yes'
-        ? { companionName: answers[index].companionName }
+      answer: answer.response === 'yes' ? 'Asiste' : 'No asiste',
+      ...(guest.type === 'open' && answer.response === 'yes'
+        ? { companionName: answer.companionName }
         : {})
-    }))
-  };
+    };
+  });
+  const payload = { token: rsvpToken, answers: submitted };
 
   const activeButton = type === 'declined' ? declineButton : saveButton;
   const originalContent = activeButton.innerHTML;
@@ -921,21 +927,21 @@ async function saveRsvp(type, answers) {
     }
 
     const savedById = new Map(verification.guests.map(guest => [guest.id, guest]));
-    for (let index = 0; index < invitation.guests.length; index += 1) {
-      const originalGuest = invitation.guests[index];
-      const savedGuest = savedById.get(originalGuest.id);
-      const expectedAnswer = answers[index].response === 'yes' ? 'Asiste' : 'No asiste';
-      if (!savedGuest || savedGuest.answer !== expectedAnswer) {
-        throw new Error('La hoja todavía no refleja todas las respuestas. Intenta guardar nuevamente.');
+    for (const item of submitted) {
+      const savedGuest = savedById.get(item.guestId);
+      if (!savedGuest || savedGuest.answer !== item.answer) {
+        throw new Error('No pudimos verificar todas las respuestas guardadas. Intenta nuevamente.');
       }
-      if (originalGuest.type === 'open' && expectedAnswer === 'Asiste'
-          && savedGuest.companionName !== answers[index].companionName) {
+      if (item.companionName && savedGuest.companionName !== item.companionName) {
         throw new Error('No pudimos verificar el nombre del acompañante. Intenta nuevamente.');
       }
     }
 
     invitation = mapServerInvitation(verification);
-    renderSaved({ type, answers });
+    const confirmed = invitation.guests.filter(guest => guest.answer === 'Asiste').length;
+    doneTitleEl.textContent = '¡Respuesta guardada!';
+    doneTextEl.textContent = `${submitted.length} respuesta(s) registradas. En total, ${confirmed} de ${invitation.guests.length} invitados han confirmado. Las personas pendientes podrán responder después con este mismo enlace.`;
+    openRsvp('done');
   } catch (error) {
     validationEl.textContent = error.message || 'No se pudo guardar la respuesta. Intenta nuevamente.';
     validationEl.hidden = false;
