@@ -740,6 +740,7 @@ function buildGuestList(saved = {}) {
       <p class="rsvp-guest-name">
         ${escapeHtml(guest.name)}
         ${isOpen ? '<span class="rsvp-open-badge">Lugar abierto</span>' : ''}
+        ${guest.answer && guest.answer !== 'Pendiente' ? '<span class="rsvp-open-badge">Respuesta registrada</span>' : ''}
       </p>
 
       <div class="rsvp-choices">
@@ -750,6 +751,7 @@ function buildGuestList(saved = {}) {
             name="guest-${index}"
             value="yes"
             ${savedItem.response === 'yes' ? 'checked' : ''}
+            ${guest.answer && guest.answer !== 'Pendiente' ? 'disabled' : ''}
           >
           <label for="g-${index}-yes">Sí asistirá</label>
         </div>
@@ -761,6 +763,7 @@ function buildGuestList(saved = {}) {
             name="guest-${index}"
             value="no"
             ${savedItem.response === 'no' ? 'checked' : ''}
+            ${guest.answer && guest.answer !== 'Pendiente' ? 'disabled' : ''}
           >
           <label for="g-${index}-no">No asistirá</label>
         </div>
@@ -815,6 +818,8 @@ function getAnswers() {
   if (!invitation) return result;
 
   invitation.guests.forEach((guest, index) => {
+    // Las respuestas ya guardadas quedan protegidas: no se vuelven a enviar ni editar.
+    if (guest.answer && guest.answer !== 'Pendiente') return;
     const selected = document.querySelector(`input[name="guest-${index}"]:checked`);
     if (!selected) return;
 
@@ -887,7 +892,12 @@ async function saveRsvp(type, answers) {
 
   // Enviar únicamente las personas que fueron contestadas en esta ocasión.
   // Las demás permanecen intactas en Google Sheets.
-  const submitted = Object.entries(answers).map(([indexText, answer]) => {
+  const submitted = Object.entries(answers)
+    .filter(([indexText]) => {
+      const guest = invitation.guests[Number(indexText)];
+      return guest && (!guest.answer || guest.answer === 'Pendiente');
+    })
+    .map(([indexText, answer]) => {
     const guest = invitation.guests[Number(indexText)];
     return {
       guestId: guest.id,
@@ -897,8 +907,12 @@ async function saveRsvp(type, answers) {
         : {})
     };
   });
-  const payload = { token: rsvpToken, answers: submitted };
-
+  if (!submitted.length) {
+    rsvpSaving = false;
+    validationEl.textContent = 'No hay respuestas pendientes por guardar.';
+    validationEl.hidden = false;
+    return;
+  }
   const activeButton = type === 'declined' ? declineButton : saveButton;
   const originalContent = activeButton.innerHTML;
   const buttons = [saveButton, declineButton];
@@ -911,16 +925,18 @@ async function saveRsvp(type, answers) {
   activeButton.innerHTML = '<span class="rsvp-spinner" aria-hidden="true"></span><span>Guardando respuesta…</span>';
 
   try {
-    // POST simple (text/plain) para evitar preflight CORS en la aplicación web de Apps Script.
-    await fetch(RSVP_API_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      cache: 'no-store',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
+    // Guardado mediante JSONP: evita CORS/preflight y funciona en navegadores integrados
+    // de Messenger y WhatsApp, igual que la lectura de la invitación.
+    const saveResult = await requestRsvpJsonp({
+      action: 'save',
+      token: rsvpToken,
+      answers: JSON.stringify(submitted)
     });
+    if (!saveResult || !saveResult.ok) {
+      throw new Error(saveResult?.message || 'No se pudo registrar la respuesta.');
+    }
 
-    // Verificamos leyendo de nuevo la hoja; no damos por guardada una respuesta sin comprobarla.
+    // Confirmamos leyendo nuevamente la hoja después de que Apps Script responde al guardado.
     const verification = await requestRsvpJsonp({ action: 'family', token: rsvpToken });
     if (!verification || !verification.ok) {
       throw new Error(verification?.message || 'No pudimos verificar el guardado.');
@@ -931,9 +947,6 @@ async function saveRsvp(type, answers) {
       const savedGuest = savedById.get(item.guestId);
       if (!savedGuest || savedGuest.answer !== item.answer) {
         throw new Error('No pudimos verificar todas las respuestas guardadas. Intenta nuevamente.');
-      }
-      if (item.companionName && savedGuest.companionName !== item.companionName) {
-        throw new Error('No pudimos verificar el nombre del acompañante. Intenta nuevamente.');
       }
     }
 
