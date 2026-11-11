@@ -995,13 +995,24 @@ document.getElementById('rsvpYes').addEventListener('click', () => {
   openRsvp('start');
 });
 
-document.getElementById('rsvpNo').addEventListener('click', () => {
-  if (!invitation) {
-    openRsvp('decline');
-    return;
-  }
-  openRsvp('decline');
-});
+// La respuesta negativa se elige persona por persona en la lista.
+// El botón secundario ya no debe rechazar a toda la familia.
+const individualChoiceButton = document.getElementById('rsvpNo');
+if (individualChoiceButton) {
+  individualChoiceButton.textContent = 'ELEGIR RESPUESTAS';
+  individualChoiceButton.addEventListener('click', () => {
+    if (!invitation) {
+      openRsvp('start');
+      return;
+    }
+    buildGuestList(getServerAnswers());
+    openRsvp('start');
+  });
+}
+
+// Deshabilita la pantalla y el control antiguos de rechazo familiar completo.
+if (screenDecline) screenDecline.hidden = true;
+if (declineButton) declineButton.hidden = true;
 
 saveButton.addEventListener('click', async () => {
   const answers = getAnswers();
@@ -1014,17 +1025,8 @@ saveButton.addEventListener('click', async () => {
   await saveRsvp('confirmed', answers);
 });
 
-declineButton.addEventListener('click', async () => {
-  if (!invitation) {
-    openRsvp('decline');
-    return;
-  }
-  const answers = {};
-  invitation.guests.forEach((guest, index) => {
-    answers[index] = { response: 'no', companionName: '' };
-  });
-  await saveRsvp('declined', answers);
-});
+// Se elimina el guardado de rechazo familiar completo; cada negativa se elige en la lista.
+
 
 document.getElementById('rsvpDeclineBack').addEventListener('click', () => {
   closeRsvp();
